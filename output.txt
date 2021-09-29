@@ -1,0 +1,4 @@
+<id,a> <op,+> <id,b> <op,+> <id,a> <num,43> <num,43> <num,1231> 
+<op,+> <id,b> <id,rqwe> 
+<op,+> <id,fewr> <id,dew3> 
+<num,24> <num,12> <id,s324> <op,*> 
