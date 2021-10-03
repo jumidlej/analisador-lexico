@@ -111,30 +111,38 @@ class lexer:
             # number tag
             if self.peek.isdigit():
                 v = 0
+                decimal = False
+                div = 1
                 while (True):
-                    v = 10*v+ord(self.peek)-48
+                    if self.peek != '.':
+                        v = 10*v+ord(self.peek)-48
+                        if decimal:
+                            div *= 10
+                    else:
+                        if not decimal:
+                            decimal = True
+                        else:
+                            self.output_file.write("<"+str(self.tags.number)+","+str(v/div)+"> ")
+                            break
                     if len(peeks_list) > 0:
                         self.peek = peeks_list.pop(0)
                     else:
                         break
-                    if not self.peek.isdigit():
-                        self.output_file.write("<"+str(self.tags.number)+","+str(v)+"> ")
+                    if not (self.peek.isdigit() or self.peek == '.'):
+                        self.output_file.write("<"+str(self.tags.number)+","+str(v/div)+"> ")
                         break
 
             # identifier, true, false, log, and, or, not, sqrt tags
             elif self.isletter(self.peek):
-                buffer = []
+                buffer = ''
                 while (True):
-                    buffer.append(self.peek)
+                    buffer += self.peek
                     if len(peeks_list) > 0:
                         self.peek = peeks_list.pop(0)
                     else:
                         break
                     if not (self.peek.isdigit() or self.isletter(self.peek)):
                         break
-
-                # list to string
-                buffer = ''.join(buffer)
 
                 # procurar se tem na hash de palavras reservadas
                 if buffer in self.reserved_hash:
@@ -147,15 +155,23 @@ class lexer:
                     self.identifiers_hash[buffer] = identifier(self.tags.identifier, buffer)
                     self.output_file.write("<"+str(self.tags.identifier)+","+buffer+"> ")
 
-            # operadores tag
+            # operadores tags
             elif self.peek in self.operators_hash:
-                self.output_file.write("<"+self.operators_hash[self.peek].tag+"> ")
+                buffer = self.peek
                 if len(peeks_list) > 0:
                     self.peek = peeks_list.pop(0)
-                else:
-                    break
+                    if buffer in ['=', '>', '<'] and self.peek == '=':
+                        buffer += self.peek
+                        if len(peeks_list) > 0:
+                            self.peek = peeks_list.pop(0)
+                self.output_file.write("<"+self.operators_hash[buffer].tag+"> ")
 
             # tratar tokens genéricos
+            else:
+                self.output_file.write("<"+self.peek+"> ")
+                if len(peeks_list) > 0:
+                    self.peek = peeks_list.pop(0)
+                print("Que que eu faço com token genérico?")
 
 input_file = 'input.txt'
 output_file = 'output.txt'
@@ -163,9 +179,3 @@ output_file = 'output.txt'
 l = lexer()
 l.scan(input_file, output_file)
         
-
-
-
-
-
-
