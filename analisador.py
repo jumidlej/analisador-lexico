@@ -97,7 +97,6 @@ class lexer:
                         self.peek = peeks_list.pop(0)
                     else:
                         return
-                        break
                     continue
                 elif self.peek == '\n':
                     self.output_file.write("\n")
@@ -106,7 +105,6 @@ class lexer:
                         self.peek = peeks_list.pop(0)
                     else:
                         return
-                        break
                     continue
                 else:
                     break
