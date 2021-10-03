@@ -1,9 +1,26 @@
+# passar pra números a partir de 256 depois
 class tag:
     number = 'num'
     identifier = 'id'
-    operator = 'op'
     true = 'true'
     false = 'false'
+    addition = '+'
+    subtraction = '-'
+    multiplication = '*'
+    division = '/'
+    logarithm = 'log'
+    square = 'sqrt'
+    assignment = '='
+    equality = '=='
+    bigger_than = '>'
+    less_than = '<'
+    bigger_or_equal = '>='
+    less_or_equal = '<=' 
+    logical_or = 'or'
+    logical_and = 'and'
+    logical_not = 'not'
+    open_parentesis = '('
+    close_parentesis = ')'
 
 class token:
     def __init__(self, tag):
@@ -21,16 +38,10 @@ class identifier(token):
         super().__init__(tag)
         self.name = name
 
-class operator(token):
-    def __init__(self, tag, symbol):
-        super().__init__(tag)
-        self.symbol = symbol
-
 class lexer:
     def __init__(self):
         self.tags = tag() 
         
-        # por que não podem ser listas?
         # hash identifiers
         self.identifiers_hash = {}
         # hash operators
@@ -38,13 +49,28 @@ class lexer:
         # hash reserved words
         self.reserved_hash = {}
 
-        self.reserved_hash['True'] = identifier(self.tags.true, 'True')
-        self.reserved_hash['False'] = identifier(self.tags.true, 'False')
-        self.operators_hash['0'] = operator(self.tags.operator, '+')
-        self.operators_hash['1'] = operator(self.tags.operator, '-')
-        self.operators_hash['2'] = operator(self.tags.operator, '*')
-        self.operators_hash['3'] = operator(self.tags.operator, '/')
+        # log e sqrt são operadores?
+        self.reserved_hash['true'] = token(self.tags.true)
+        self.reserved_hash['false'] = token(self.tags.false)
+        self.reserved_hash['or'] = token(self.tags.logical_or)
+        self.reserved_hash['and'] = token(self.tags.logical_and)
+        self.reserved_hash['not'] = token(self.tags.logical_not)
+        self.reserved_hash['log'] = token(self.tags.logarithm)
+        self.reserved_hash['sqrt'] = token(self.tags.square)
+        self.operators_hash['='] = token(self.tags.assignment)
+        self.operators_hash['+'] = token(self.tags.addition)
+        self.operators_hash['-'] = token(self.tags.subtraction)
+        self.operators_hash['*'] = token(self.tags.multiplication)
+        self.operators_hash['/'] = token(self.tags.division)
+        self.operators_hash['=='] = token(self.tags.equality)
+        self.operators_hash['>'] = token(self.tags.bigger_than)
+        self.operators_hash['<'] = token(self.tags.less_than)
+        self.operators_hash['>='] = token(self.tags.bigger_or_equal)
+        self.operators_hash['<='] = token(self.tags.less_or_equal)
+        self.operators_hash['('] = token(self.tags.open_parentesis)
+        self.operators_hash[')'] = token(self.tags.close_parentesis)
         
+    # função para saber se um char é uma letra [a-zA-Z]
     def isletter(self, character):
         if ord(character) >= 65 and ord(character) <= 90:
             return True
@@ -61,22 +87,29 @@ class lexer:
         peeks_list = list(peeks_list)
 
         # print(peeks_list)
+        self.peek = ' '
         while (len(peeks_list) > 0):
-            while (True):
-                if len(peeks_list) > 0:
-                    self.peek = peeks_list.pop(0)
-                else:
-                    break
+            # procura char que não seja espaço, tabulação ou quebra de linha
+            while True:
                 if self.peek == ' ' or self.peek == '\t':
+                    if len(peeks_list) > 0:
+                        self.peek = peeks_list.pop(0)
+                    else:
+                        break
                     continue
                 elif self.peek == '\n':
                     self.output_file.write("\n")
                     self.line += 1
+                    if len(peeks_list) > 0:
+                        self.peek = peeks_list.pop(0)
+                    else:
+                        break
                     continue
                 else:
                     break
             
-            if (self.peek.isdigit()):
+            # number tag
+            if self.peek.isdigit():
                 v = 0
                 while (True):
                     v = 10*v+ord(self.peek)-48
@@ -87,9 +120,9 @@ class lexer:
                     if not self.peek.isdigit():
                         self.output_file.write("<"+str(self.tags.number)+","+str(v)+"> ")
                         break
-                    # em vez de retornar escrever no arquivo
 
-            elif (self.isletter(self.peek)):
+            # identifier, true, false, log, and, or, not, sqrt tags
+            elif self.isletter(self.peek):
                 buffer = []
                 while (True):
                     buffer.append(self.peek)
@@ -103,37 +136,26 @@ class lexer:
                 # list to string
                 buffer = ''.join(buffer)
 
+                # procurar se tem na hash de palavras reservadas
+                if buffer in self.reserved_hash:
+                    self.output_file.write("<"+self.reserved_hash[buffer].tag+"> ")
+
                 # procurar se tem na hash de identificadores se não tiver adicionar
-                # ACHAR UM JEITO MELHOR DE FAZER ISSO
-                is_new = True
-                for obj in self.identifiers_hash.values():
-                    if buffer == obj.name:
-                        is_new = False
-                        break
-
-                if is_new:
-                    # print(buffer)
+                elif buffer in self.identifiers_hash:
+                    self.output_file.write("<"+str(self.tags.identifier)+","+buffer+"> ")
+                else:
                     self.identifiers_hash[buffer] = identifier(self.tags.identifier, buffer)
-                    
-                # escrever no arquivo
-                self.output_file.write("<"+str(self.tags.identifier)+","+buffer+"> ")
+                    self.output_file.write("<"+str(self.tags.identifier)+","+buffer+"> ")
 
-            else:
-                for obj in self.operators_hash.values():
-                    if self.peek == obj.symbol:
-                        # escrever no arquivo
-                        self.output_file.write("<"+str(self.tags.operator)+","+self.peek+"> ")
-                        break
+            # operadores tag
+            elif self.peek in self.operators_hash:
+                self.output_file.write("<"+self.operators_hash[self.peek].tag+"> ")
+                if len(peeks_list) > 0:
+                    self.peek = peeks_list.pop(0)
+                else:
+                    break
 
-            
-
-            if self.peek == '\n':
-                self.output_file.write("\n")
-                self.line += 1
-
-            # se não achou um op, nem id, nem digito, não devia retornar erro?
-
-            # resolver os tokens genéricos (???)
+            # tratar tokens genéricos
 
 input_file = 'input.txt'
 output_file = 'output.txt'
