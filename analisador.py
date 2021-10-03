@@ -88,13 +88,15 @@ class lexer:
 
         # print(peeks_list)
         self.peek = ' '
-        while (len(peeks_list) > 0):
+        end = False
+        while not end:
             # procura char que não seja espaço, tabulação ou quebra de linha
             while True:
                 if self.peek == ' ' or self.peek == '\t':
                     if len(peeks_list) > 0:
                         self.peek = peeks_list.pop(0)
                     else:
+                        return
                         break
                     continue
                 elif self.peek == '\n':
@@ -103,6 +105,7 @@ class lexer:
                     if len(peeks_list) > 0:
                         self.peek = peeks_list.pop(0)
                     else:
+                        return
                         break
                     continue
                 else:
@@ -127,10 +130,12 @@ class lexer:
                     if len(peeks_list) > 0:
                         self.peek = peeks_list.pop(0)
                     else:
+                        end = True
                         break
                     if not (self.peek.isdigit() or self.peek == '.'):
-                        self.output_file.write("<"+str(self.tags.number)+","+str(v/div)+"> ")
                         break
+                
+                self.output_file.write("<"+str(self.tags.number)+","+str(v/div)+"> ")
 
             # identifier, true, false, log, and, or, not, sqrt tags
             elif self.isletter(self.peek):
@@ -140,6 +145,7 @@ class lexer:
                     if len(peeks_list) > 0:
                         self.peek = peeks_list.pop(0)
                     else:
+                        end = True
                         break
                     if not (self.peek.isdigit() or self.isletter(self.peek)):
                         break
@@ -164,6 +170,10 @@ class lexer:
                         buffer += self.peek
                         if len(peeks_list) > 0:
                             self.peek = peeks_list.pop(0)
+                        else:
+                            end = True
+                else:
+                    end = True
                 self.output_file.write("<"+self.operators_hash[buffer].tag+"> ")
 
             # tratar tokens genéricos
@@ -171,7 +181,8 @@ class lexer:
                 self.output_file.write("<"+self.peek+"> ")
                 if len(peeks_list) > 0:
                     self.peek = peeks_list.pop(0)
-                print("Que que eu faço com token genérico?")
+                else:
+                    end = True
 
 input_file = 'input.txt'
 output_file = 'output.txt'
